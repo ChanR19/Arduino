@@ -1,0 +1,75 @@
+//User settings:-----------------------
+const float showerTime = 5; //In minutes
+const int warmupTime = 20; //In seconds
+//-------------------------------------
+
+#include <LiquidCrystal.h>
+#include <BlynkSimpleCurieBLE.h>
+#include <CurieBLE.h>
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+BLEperipheral bleperipheral;
+char[] auth = "your auth token here":
+
+void setup() {
+  // put your setup code here, to run once: 
+  lcd.begin(16,2); 
+  pinMode(13,OUTPUT); //Set pin 13 as output (For solenoid valve)
+  pinMode(10,OUTPUT); //Set pin 10 as output (For piezo buzzer)
+  blePeripheral.setLocalName("Shower"); 
+  blePeripheral.setDeviceName("Shower"); 
+  blePeripheral.setAppearance(384); 
+  Blynk.begin(blePeripheral, auth); 
+  blePeripheral.begin(); 
+}
+
+void loop() {
+  Blynk.run();
+  // put your main code here, to run repeatedly:
+  if(millis() > 0 && millis() < (warmupTime * 1000)){ //If the status is 0, begin warmup
+    digitalWrite(13,HIGH); //Open solenoid valve
+    tone(10,2000,1000); //Gives the warmup buzz
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Water Warmup:"); //Text for line 1
+      lcd.setCursor(0,1);
+      lcd.print(String(i) + " seconds"); //Text for line 2
+    stat++; //Update status
+  }else if(millis() > (warmupTime * 1000) && millis() < (showerTime * 1000)){//If the status is 1, begin the shower timer
+    tone(10,2000,1000); //Gives the shower buzz; warmup is over
+    delay(1500);
+    tone(10,2000,1000);
+      if(millis() == 120000){ //If there are 2 minutes left, give a warning buzz
+        tone(10,2000,1000); 
+      }
+      if(millis() == 60000){ //If there is 1 minute left, give a second warning buzz
+        tone(10,2000,1000);
+      }
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Shower:"); //Text for line 1
+      lcd.setCursor(0,1);
+      lcd.print(String(i) + " seconds"); //Text for line 2
+      delay(1000);
+    stat++; //Update status
+  }else{ //If the status is 2,stop the shower and notify user that it is over
+    digitalWrite(13,LOW); //Close solvenoid valve
+    tone(10,2000); //Gives buzz until it is shut off
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Shower Over"); //Text for line 1
+    lcd.setCursor(0,1);
+    lcd.print("Have a Good Day!"); //Text for line 2
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Turn me off"); //Text for line 1
+    lcd.setCursor(0,1);
+    lcd.print("Turn water off"); //Text for line 2
+    delay(5000);  
+  }
+}
+
+BLYNK_WRITE(V0){
+  showerTime = param.asInt();
+}
