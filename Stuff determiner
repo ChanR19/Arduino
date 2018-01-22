@@ -1,37 +1,64 @@
-#include<math.h>
+//ADD NEW COMPOUNDS HERE:
 double Keq[] = {0.000000000056};
 double molarMass[] = {84.008};
 String compounds[] = {"NaHCO3"};
 double pHresults[] = {0};
-//WILL NEED TO CHANGE FOR LOOP WHEN YOU ADD NEW STUFF
+//END
+//NOTE: the HX711 (https://github.com/bogde/HX711) library must be downloaded; calibration factor here: https://learn.sparkfun.com/tutorials/load-cell-amplifier-hx711-breakout-hookup-guide
+#include <HX711.h>
+#include <LiquidCrystal.h>
+#include <math.h>
 
 double mass = 0; //IN GRAMS
 double volume = 0.050; //IN LITERS
 
-double pH = 0;
+double finalpH = 0;
+double finalMass = 0;
 String identity = "";
 double percentError = -1;
+
+double pHOffSet = 0.00;
+double loadCellCalibrationFactor = -7050;
+HX711 scale(A0,A1); //First is DOUT, second is SCK
 
 void setup() {
   // put your setup code here, to run once:
   pinMode(2,INPUT);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  scale.set_scale(loadCellCalibrationFactor);
+  scale.tare();
+  Serial.begin(9600);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  //Calculate current pH
+  double voltage = analogRead(A0) * 5.0 / 1024;
+  double currentpH = 3.5 * voltage + pHOffSet;
+  Serial.println("Current pH: " + String(currentpH));
+  //Calculate current weight
+  double currentWeight = (scale.get_units(), 1);
+  Serial.println("Current weight: " + String(currentWeight));
+  
+  //Do calculations of the button is pressed
   if(digitalRead(2) == true){
+    //Set final pH and weight (so they don't change during calculations and comparing)
+    finalpH = currentpH;
+    finalWeight = currentWeight;
+    //Calculate pH
     double closestDistance = -1;
     int bestFitIndex = 0;
-    for(int i = 0; i < 1; i++){ 
+    for(int i = 0; i < (sizeof(compounds)/sizeof(compounds[0])); i++){ 
       pHresults[i] = log(1/((-Keq[i]+sqrt(pow(Keq[i],2) + 4*((mass/molarMass[i])/volume)*Keq[i]))/2))/log(10);
       if(closestDistance == -1){
-        closestDistance = abs(pHresults[i] - pH);
-      }else if(abs(pHresults[i] - pH) < closestDistance){
+        closestDistance = abs(pHresults[i] - finalpH);
+      }else if(abs(pHresults[i] - finalpH) < closestDistance){
         closestDistance = pHresults[i];
         bestFitIndex = i;
       }
     }
     identity = compounds[bestFitIndex];
-    percentError = 100*(abs(pHresults[bestFitIndex] - pH)/pH);
+    percentError = 100*(abs(pHresults[bestFitIndex] - finalpH)/finalpH);
   }
 }
