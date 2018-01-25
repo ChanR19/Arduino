@@ -61,4 +61,5 @@ void loop() {
     identity = compounds[bestFitIndex];
     percentError = 100*(abs(pHresults[bestFitIndex] - finalpH)/finalpH);
   }
+  Serial.println("Identity: " + String(identity) + " Percent Error: " + String(percentError));
 }
