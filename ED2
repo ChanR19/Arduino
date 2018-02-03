@@ -1,0 +1,39 @@
+#include <HX711.h>
+#include <LiquidCrystal.h>
+
+#define DOUT  A1
+#define CLK  A0
+HX711 scale(DOUT, CLK);
+
+float scale_calibration_factor = -435;
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(A0,INPUT);
+  pinMode(A1,INPUT);
+  pinMode(A2,INPUT);
+  scale.set_scale();
+  scale.tare();
+  lcd.begin(16,2);
+  Serial.begin(9600);
+  Serial.println("COMMANDS");
+  Serial.println("Type: 'i= formula' to set identity for substance Ex: i=NaHCO3");
+  Serial.println("Type: 'm= molar mass' to set molar mass for substance Ex: m=84.01");
+  Serial.println("Type: 'k= Keq if it has one' to set Keq for substance Ex: k=84.01");
+  Serial.println("Type: 't' to tare");
+  Serial.println("Type: 'b' to begin");
+  Serial.println("Note: Percent purity will appear on this screen");
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  float currentWeight = scale.get_units(20);
+  float current_pH = 3.5*(analogRead(A2)*5.0/1024) -2.3;  
+  lcd.setCursor(0,0);
+  lcd.print(currentWeight);
+  lcd.setCursor(0,1);
+  lcd.print(current_pH);
+  
+}
